@@ -1,20 +1,10 @@
-import React, { useState, useEffect } from "react";
-import { loadStripe } from "@stripe/stripe-js";
-import { Elements, CardElement, useStripe, useElements } from "@stripe/react-stripe-js";
+import React, { useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { useCart } from "../contexts/CartContext";
 import { db } from "../lib/firebase";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { useNavigate, useLocation } from "react-router-dom";
-import { CreditCard, ShieldCheck, ShoppingCart, Trash2, Plus, Minus, Sparkles, QrCode, Smartphone, Zap } from "lucide-react";
-
-declare global {
-  interface Window {
-    Razorpay: any;
-  }
-}
-
-const stripePromise = loadStripe((import.meta as any).env.VITE_STRIPE_PUBLISHABLE_KEY);
+import { ShieldCheck, ShoppingCart, Trash2, Plus, Minus, Sparkles, QrCode, Smartphone } from "lucide-react";
 
 const ASSISTANCE_TYPES = [
   { id: "quiz", name: "Quiz Support", price: 10 },
@@ -39,24 +29,11 @@ export default function Checkout() {
   const initialCourse = queryParams.get("course");
 
   const { cart, addToCart, removeFromCart, updateQuantity, totalAmount, clearCart } = useCart();
-  const [clientSecret, setClientSecret] = useState("");
   const [formData, setFormData] = useState({
     courseName: initialCourse || COURSES[0],
     notes: "",
     phone: "",
   });
-
-  useEffect(() => {
-    if (totalAmount > 0) {
-      fetch("/api/create-payment-intent", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ amount: totalAmount * 100 }), // Stripe expects cents
-      })
-        .then((res) => res.json())
-        .then((data) => setClientSecret(data.clientSecret));
-    }
-  }, [totalAmount]);
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -161,192 +138,20 @@ export default function Checkout() {
         <div className="lg:w-1/3">
           <div className="bg-white p-8 rounded-3xl shadow-xl border border-slate-100 sticky top-24">
             <h2 className="text-xl font-bold text-slate-900 mb-6 flex items-center gap-2">
-              <ShieldCheck className="text-emerald-600" /> Secure Checkout
+              <QrCode className="text-emerald-600" /> Google Pay Checkout
             </h2>
 
-            <PaymentTabs cart={cart} formData={formData} totalAmount={totalAmount} clientSecret={clientSecret} clearCart={clearCart} />
+            <UPIPayment cart={cart} formData={formData} totalAmount={totalAmount} clearCart={clearCart} />
 
             <div className="mt-8 pt-8 border-t border-slate-100">
               <div className="flex items-center gap-3 text-slate-400 text-xs leading-relaxed">
                 <ShieldCheck size={24} className="text-emerald-500 flex-shrink-0" />
-                Your payment is secured with 256-bit encryption. We support Cards, Google Pay, and UPI.
+                Your payment is secured. We support Google Pay and all UPI apps.
               </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
-  );
-}
-
-function PaymentTabs({ cart, formData, totalAmount, clientSecret, clearCart }: any) {
-  const [activeTab, setActiveTab] = useState<"card" | "upi" | "razorpay">("razorpay");
-
-  if (cart.length === 0) {
-    return (
-      <div className="text-center py-8 text-slate-400 text-sm italic">
-        Add items to cart to proceed
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-6">
-      <div className="flex p-1 bg-slate-100 rounded-xl">
-        <button 
-          onClick={() => setActiveTab("razorpay")}
-          className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1 ${activeTab === "razorpay" ? "bg-white text-emerald-600 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}
-        >
-          <Zap size={14} /> Razorpay
-        </button>
-        <button 
-          onClick={() => setActiveTab("card")}
-          className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1 ${activeTab === "card" ? "bg-white text-emerald-600 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}
-        >
-          <CreditCard size={14} /> Card
-        </button>
-        <button 
-          onClick={() => setActiveTab("upi")}
-          className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1 ${activeTab === "upi" ? "bg-white text-emerald-600 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}
-        >
-          <Smartphone size={14} /> UPI
-        </button>
-      </div>
-
-      {activeTab === "razorpay" ? (
-        <RazorpayPayment cart={cart} formData={formData} totalAmount={totalAmount} clearCart={clearCart} />
-      ) : activeTab === "card" ? (
-        clientSecret ? (
-          <Elements stripe={stripePromise} options={{ clientSecret }}>
-            <PaymentForm cart={cart} formData={formData} totalAmount={totalAmount} clientSecret={clientSecret} clearCart={clearCart} />
-          </Elements>
-        ) : (
-          <div className="text-center py-8 text-slate-400 text-sm">
-            Initializing secure checkout...
-          </div>
-        )
-      ) : (
-        <UPIPayment cart={cart} formData={formData} totalAmount={totalAmount} clearCart={clearCart} />
-      )}
-    </div>
-  );
-}
-
-function RazorpayPayment({ cart, formData, totalAmount, clearCart }: any) {
-  const { user } = useAuth();
-  const navigate = useNavigate();
-  const [loading, setLoading] = useState(false);
-
-  const handlePayment = async () => {
-    if (!user) return;
-    setLoading(true);
-
-    try {
-      // 1. Create Order on Server
-      const orderRes = await fetch("/api/create-razorpay-order", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          amount: totalAmount * 100, // Razorpay expects paise
-          currency: "INR",
-          receipt: `receipt_${Date.now()}`,
-        }),
-      });
-      const orderData = await orderRes.json();
-
-      // 2. Open Razorpay Checkout
-      const options = {
-        key: (import.meta as any).env.VITE_RAZORPAY_KEY_ID || "rzp_test_placeholder", // Use env variable
-        amount: orderData.amount,
-        currency: orderData.currency,
-        name: "GenAI Assist Pro",
-        description: cart.map((i: any) => i.name).join(", "),
-        image: "https://picsum.photos/seed/genai/200/200",
-        order_id: orderData.id,
-        handler: async (response: any) => {
-          // 3. Verify Payment on Server
-          const verifyRes = await fetch("/api/verify-razorpay-payment", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              razorpay_order_id: response.razorpay_order_id,
-              razorpay_payment_id: response.razorpay_payment_id,
-              razorpay_signature: response.razorpay_signature,
-            }),
-          });
-          const verifyData = await verifyRes.json();
-
-          if (verifyData.success) {
-            // 4. Create Order in Firestore
-            const orderRef = await addDoc(collection(db, "orders"), {
-              userId: user.uid,
-              userName: user.displayName || "Student",
-              userEmail: user.email,
-              phone: formData.phone,
-              courseName: formData.courseName,
-              items: cart,
-              assistanceType: cart.map((i: any) => i.name).join(", "),
-              amount: totalAmount,
-              paymentMethod: "Razorpay",
-              paymentId: response.razorpay_payment_id,
-              paymentStatus: "Paid",
-              orderStatus: "Pending",
-              tasks: [
-                { label: "Task Received", completed: false },
-                { label: "Work In Progress", completed: false },
-                { label: "Review Completed", completed: false },
-                { label: "Final Verification", completed: false },
-                { label: "Mark as Completed", completed: false },
-              ],
-              notes: formData.notes,
-              createdAt: serverTimestamp(),
-            });
-
-            clearCart();
-            navigate("/success", { state: { orderId: orderRef.id } });
-          } else {
-            alert("Payment verification failed!");
-          }
-        },
-        prefill: {
-          name: user.displayName || "",
-          email: user.email || "",
-          contact: formData.phone || "",
-        },
-        theme: {
-          color: "#059669",
-        },
-      };
-
-      const rzp = new window.Razorpay(options);
-      rzp.open();
-    } catch (error) {
-      console.error("Razorpay Error:", error);
-      alert("Something went wrong with Razorpay initialization.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <div className="space-y-6">
-      <div className="bg-emerald-50 p-4 rounded-xl border border-emerald-100">
-        <div className="flex items-center gap-3 mb-2">
-          <Zap className="text-emerald-600" size={20} />
-          <span className="font-bold text-emerald-900">Razorpay Express</span>
-        </div>
-        <p className="text-xs text-emerald-700 leading-relaxed">
-          Pay securely via UPI, Cards, Netbanking, or Wallets. Recommended for instant activation.
-        </p>
-      </div>
-
-      <button 
-        onClick={handlePayment}
-        disabled={loading}
-        className="w-full bg-emerald-600 text-white py-4 rounded-xl font-bold hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-100 disabled:opacity-50 flex items-center justify-center gap-2"
-      >
-        {loading ? "Initializing..." : `Pay ₹${totalAmount} with Razorpay`}
-      </button>
     </div>
   );
 }
@@ -473,99 +278,5 @@ function UPIPayment({ cart, formData, totalAmount, clearCart }: any) {
         </p>
       </div>
     </div>
-  );
-}
-
-function PaymentForm({ cart, formData, totalAmount, clientSecret, clearCart }: any) {
-  const stripe = useStripe();
-  const elements = useElements();
-  const { user } = useAuth();
-  const navigate = useNavigate();
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!stripe || !elements || !user) return;
-
-    setLoading(true);
-    setError("");
-
-    const cardElement = elements.getElement(CardElement);
-    if (!cardElement) return;
-
-    const { error: stripeError, paymentIntent } = await stripe.confirmCardPayment(
-      clientSecret,
-      {
-        payment_method: {
-          card: cardElement as any,
-          billing_details: {
-            name: user.displayName || "Student",
-            email: user.email!,
-          },
-        },
-      }
-    );
-
-    // Note: In a real app, you'd use confirmPayment with the clientSecret. 
-    // For this implementation, I'll simulate a successful payment for the flow.
-    
-    try {
-      // Simulate success for demo if keys aren't set
-      const orderRef = await addDoc(collection(db, "orders"), {
-        userId: user.uid,
-        userName: user.displayName || "Student",
-        userEmail: user.email,
-        phone: formData.phone,
-        courseName: formData.courseName,
-        items: cart,
-        assistanceType: cart.map((i: any) => i.name).join(", "),
-        amount: totalAmount,
-        paymentStatus: "Paid",
-        orderStatus: "Pending",
-        tasks: [
-          { label: "Task Received", completed: false },
-          { label: "Work In Progress", completed: false },
-          { label: "Review Completed", completed: false },
-          { label: "Final Verification", completed: false },
-          { label: "Mark as Completed", completed: false },
-        ],
-        notes: formData.notes,
-        createdAt: serverTimestamp(),
-      });
-
-      clearCart();
-      navigate("/success", { state: { orderId: orderRef.id } });
-    } catch (err: any) {
-      setError("Payment failed. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="p-4 rounded-xl border border-slate-200 bg-slate-50">
-        <CardElement options={{
-          style: {
-            base: {
-              fontSize: '16px',
-              color: '#1e293b',
-              '::placeholder': { color: '#94a3b8' },
-            },
-          },
-        }} />
-      </div>
-      
-      {error && <div className="text-red-500 text-xs font-bold">{error}</div>}
-
-      <button 
-        type="submit" 
-        disabled={!stripe || loading}
-        className="w-full bg-emerald-600 text-white py-4 rounded-xl font-bold hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-100 disabled:opacity-50 flex items-center justify-center gap-2"
-      >
-        {loading ? "Processing..." : `Pay ₹${totalAmount}`}
-      </button>
-    </form>
   );
 }
