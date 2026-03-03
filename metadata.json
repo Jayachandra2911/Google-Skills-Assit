@@ -1,0 +1,9 @@
+{
+  "name": "GenAI Assist Pro",
+  "description": "Premium EdTech platform for structured Generative AI mentorship and guided assistance.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone",
+    "geolocation"
+  ]
+}
