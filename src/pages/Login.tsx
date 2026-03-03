@@ -100,6 +100,12 @@ export default function Login() {
           <p className="text-center mt-8 text-sm text-slate-500">
             Don't have an account? <Link to="/register" className="text-emerald-600 font-bold hover:underline">Sign up for free</Link>
           </p>
+
+          <div className="mt-8 pt-6 border-t border-slate-100 text-center">
+            <Link to="/admin-login" className="text-[10px] font-bold text-slate-400 uppercase tracking-widest hover:text-slate-900 transition-colors">
+              Admin Portal
+            </Link>
+          </div>
         </div>
       </div>
     </div>

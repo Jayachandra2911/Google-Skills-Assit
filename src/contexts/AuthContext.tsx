@@ -25,12 +25,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       try {
         setUser(user);
         if (user) {
-          const userDoc = await getDoc(doc(db, "users", user.uid));
-          if (userDoc.exists()) {
-            setRole(userDoc.data().role);
+          // Strictly enforce jayachandra2911@gmail.com as the one and only admin
+          if (user.email === "jayachandra2911@gmail.com") {
+            setRole("admin");
           } else {
-            console.warn("User document not found in Firestore, defaulting to student role.");
-            setRole("student");
+            // For all other users, fetch role from Firestore but ensure it's not admin
+            const userDoc = await getDoc(doc(db, "users", user.uid));
+            if (userDoc.exists()) {
+              const fetchedRole = userDoc.data().role;
+              setRole(fetchedRole === "admin" ? "student" : fetchedRole);
+            } else {
+              setRole("student");
+            }
           }
         } else {
           setRole(null);

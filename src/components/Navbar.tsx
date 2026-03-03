@@ -25,7 +25,7 @@ export default function Navbar() {
           </Link>
 
           <div className="hidden md:flex items-center gap-8">
-            <a href="/#courses" className="text-sm font-medium text-slate-600 hover:text-emerald-600 transition-colors">Courses</a>
+            <Link to="/#courses" className="text-sm font-medium text-slate-600 hover:text-emerald-600 transition-colors">Courses</Link>
             <Link to="/checkout" className="relative p-2 text-slate-600 hover:text-emerald-600 transition-colors">
               <ShoppingCart size={20} />
               {itemCount > 0 && (

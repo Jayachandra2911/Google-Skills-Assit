@@ -5,16 +5,21 @@ import { CheckCircle, ArrowRight, Calendar, FileText } from "lucide-react";
 export default function Success() {
   const location = useLocation();
   const orderId = location.state?.orderId || "N/A";
+  const isCash = location.state?.isCash || false;
 
   return (
     <div className="min-h-[calc(100vh-64px)] flex items-center justify-center px-4 py-12">
       <div className="max-w-md w-full text-center">
-        <div className="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-8">
+        <div className={`w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-8 ${isCash ? 'bg-amber-100 text-amber-600' : 'bg-emerald-100 text-emerald-600'}`}>
           <CheckCircle size={40} />
         </div>
-        <h1 className="text-3xl font-bold text-slate-900 mb-4">Payment Successful!</h1>
+        <h1 className="text-3xl font-bold text-slate-900 mb-4">
+          {isCash ? "Request Submitted!" : "Payment Successful!"}
+        </h1>
         <p className="text-slate-600 mb-8 leading-relaxed">
-          Your assistance request has been received. Our mentors will start working on it shortly. You'll receive an email confirmation soon.
+          {isCash 
+            ? "Your cash payment request has been received. The admin will contact you shortly regarding the payment collection." 
+            : "Your assistance request has been received. Our mentors will start working on it shortly. You'll receive an email confirmation soon."}
         </p>
         
         <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm mb-8 text-left">
@@ -24,12 +29,12 @@ export default function Success() {
           </div>
           <div className="space-y-3">
             <div className="flex items-center gap-3 text-sm text-slate-600">
-              <Calendar size={16} className="text-emerald-500" />
-              <span>Estimated Start: Within 2-4 hours</span>
+              <Calendar size={16} className={isCash ? "text-amber-500" : "text-emerald-500"} />
+              <span>{isCash ? "Awaiting Payment Confirmation" : "Estimated Start: Within 2-4 hours"}</span>
             </div>
             <div className="flex items-center gap-3 text-sm text-slate-600">
-              <FileText size={16} className="text-emerald-500" />
-              <span>Status: Pending Mentor Assignment</span>
+              <FileText size={16} className={isCash ? "text-amber-500" : "text-emerald-500"} />
+              <span>Status: {isCash ? "Pending Admin Contact" : "Pending Mentor Assignment"}</span>
             </div>
           </div>
         </div>

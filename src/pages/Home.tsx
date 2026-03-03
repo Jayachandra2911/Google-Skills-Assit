@@ -1,24 +1,25 @@
 import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { collection, query, where, getDocs } from "firebase/firestore";
+import { collection, query, where, getDocs, orderBy } from "firebase/firestore";
 import { db } from "../lib/firebase";
-import { ArrowRight, CheckCircle2, Star, Sparkles, Code, Brain, Search, Terminal, Database, ShieldCheck, ShoppingCart } from "lucide-react";
+import { ArrowRight, CheckCircle2, Star, Sparkles, Code, Brain, Search, Terminal, Database, ShieldCheck, ShoppingCart, Clock } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { useCart } from "../contexts/CartContext";
 
-const COURSES = [
-  { id: 1, title: "Prompt Engineering", description: "Master the art of communicating with LLMs for optimal results.", difficulty: "Beginner", price: "₹10", icon: <Terminal className="text-emerald-500" /> },
-  { id: 2, title: "LLM Fundamentals", description: "Deep dive into Transformer architectures and model training.", difficulty: "Intermediate", price: "₹25", icon: <Brain className="text-blue-500" /> },
-  { id: 3, title: "Embeddings & Vector Search", description: "Learn how to store and retrieve semantic information.", difficulty: "Advanced", price: "₹50", icon: <Database className="text-purple-500" /> },
-  { id: 4, title: "Gemini / OpenAI API", description: "Integrate powerful AI models into your own applications.", difficulty: "Intermediate", price: "₹25", icon: <Code className="text-orange-500" /> },
-  { id: 5, title: "RAG Systems", description: "Build Retrieval-Augmented Generation pipelines for custom data.", difficulty: "Advanced", price: "₹50", icon: <Search className="text-pink-500" /> },
-  { id: 6, title: "Responsible AI", description: "Ethics, bias mitigation, and safety in AI development.", difficulty: "Beginner", price: "₹10", icon: <ShieldCheck className="text-cyan-500" /> },
-];
+const ICON_MAP: any = {
+  Terminal: <Terminal className="text-emerald-500" />,
+  Brain: <Brain className="text-blue-500" />,
+  Database: <Database className="text-purple-500" />,
+  Code: <Code className="text-orange-500" />,
+  Search: <Search className="text-pink-500" />,
+  ShieldCheck: <ShieldCheck className="text-cyan-500" />,
+};
 
 export default function Home() {
   const [testimonials, setTestimonials] = useState<any[]>([]);
-  const { user } = useAuth();
+  const [courses, setCourses] = useState<any[]>([]);
+  const { user, loading } = useAuth();
   const { addToCart } = useCart();
   const navigate = useNavigate();
 
@@ -29,83 +30,110 @@ export default function Home() {
       const data = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       setTestimonials(data);
     };
+    const fetchCourses = async () => {
+      const q = query(collection(db, "courses"), orderBy("title", "asc"));
+      const querySnapshot = await getDocs(q);
+      const data = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setCourses(data);
+    };
     fetchTestimonials();
+    fetchCourses();
   }, []);
 
   return (
     <div className="overflow-hidden">
       {/* Hero Section */}
-      <section className="relative pt-20 pb-32 px-4 sm:px-6 lg:px-8 bg-white">
-        <div className="max-w-7xl mx-auto text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-          >
-            <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-50 text-emerald-700 text-sm font-semibold mb-8 border border-emerald-100">
-              <Sparkles size={16} /> Premium EdTech Platform
-            </span>
-            <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight text-slate-900 mb-6 leading-tight">
-              Master Generative AI <br />
-              <span className="text-emerald-600">With Expert Guidance</span>
-            </h1>
-            <p className="text-xl text-slate-600 max-w-2xl mx-auto mb-10 leading-relaxed">
-              Quiz Support, Lab Walkthroughs, and Challenge Mentorship. We don't just give answers; we build your expertise.
-            </p>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <a href="#courses" className="w-full sm:w-auto bg-emerald-600 text-white px-8 py-4 rounded-xl text-lg font-bold hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-200 flex items-center justify-center gap-2 group">
-                Browse Courses <ArrowRight className="group-hover:translate-x-1 transition-transform" />
-              </a>
-              <a href="#pricing" className="w-full sm:w-auto bg-white text-slate-900 border border-slate-200 px-8 py-4 rounded-xl text-lg font-bold hover:bg-slate-50 transition-all">
-                View Pricing
-              </a>
-            </div>
-          </motion.div>
+      <section className="relative pt-32 pb-40 px-4 sm:px-6 lg:px-8 bg-white overflow-hidden">
+        <div className="max-w-7xl mx-auto relative z-10">
+          <div className="flex flex-col items-center text-center">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.5 }}
+              className="mb-12"
+            >
+              <span className="inline-flex items-center gap-2 px-6 py-2 rounded-full bg-slate-900 text-white text-[10px] font-black uppercase tracking-[0.3em] mb-8 shadow-2xl shadow-slate-200">
+                <Sparkles size={14} className="text-emerald-400" /> Premium EdTech Platform
+              </span>
+              <h1 className="text-6xl md:text-8xl font-black tracking-tighter text-slate-900 mb-8 leading-[0.9] uppercase">
+                Master <br />
+                <span className="text-emerald-600">Generative AI</span>
+              </h1>
+              <p className="text-xl text-slate-500 max-w-2xl mx-auto mb-12 font-medium leading-relaxed">
+                Quiz Support, Lab Walkthroughs, and Challenge Mentorship. We don't just give answers; we build your expertise.
+              </p>
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
+                <a href="#courses" className="w-full sm:w-auto bg-emerald-600 text-white px-10 py-5 rounded-2xl text-sm font-black uppercase tracking-widest hover:bg-slate-900 transition-all shadow-2xl shadow-emerald-200 flex items-center justify-center gap-3 group">
+                  Browse Courses <ArrowRight className="group-hover:translate-x-2 transition-transform" />
+                </a>
+                <a href="#pricing" className="w-full sm:w-auto bg-white text-slate-900 border-2 border-slate-100 px-10 py-5 rounded-2xl text-sm font-black uppercase tracking-widest hover:border-emerald-600 transition-all">
+                  View Pricing
+                </a>
+              </div>
+            </motion.div>
+          </div>
         </div>
         
-        {/* Background Decoration */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full -z-10 pointer-events-none opacity-20">
-          <div className="absolute top-20 left-10 w-72 h-72 bg-emerald-400 rounded-full blur-[120px]" />
-          <div className="absolute bottom-20 right-10 w-96 h-96 bg-blue-400 rounded-full blur-[150px]" />
+        {/* Background Decoration - Brutalist Style */}
+        <div className="absolute top-0 left-0 w-full h-full -z-10 pointer-events-none">
+          <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-emerald-500/5 rounded-full blur-[120px]" />
+          <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-blue-500/5 rounded-full blur-[150px]" />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full border-[1px] border-slate-50 opacity-50" />
         </div>
       </section>
 
       {/* Course Catalog */}
-      <section id="courses" className="py-24 bg-slate-50 px-4 sm:px-6 lg:px-8">
+      <section id="courses" className="py-32 bg-slate-50 px-4 sm:px-6 lg:px-8 relative">
         <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold text-slate-900 mb-4">Explore Our Modules</h2>
-            <p className="text-slate-600">Structured mentorship for every stage of your AI journey.</p>
+          <div className="flex flex-col md:flex-row md:items-end justify-between mb-20 gap-8">
+            <div className="max-w-2xl">
+              <div className="text-emerald-600 font-black uppercase tracking-[0.3em] text-[10px] mb-4">Curriculum</div>
+              <h2 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tight uppercase">Explore Our Modules</h2>
+              <p className="text-slate-500 mt-4 font-medium text-lg">Structured mentorship for every stage of your AI journey.</p>
+            </div>
+            <div className="hidden md:block h-px flex-1 bg-slate-200 mx-12 mb-6" />
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {COURSES.map((course, idx) => (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
+            {courses.map((course, idx) => (
               <motion.div
                 key={course.id}
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: idx * 0.1 }}
-                className="bg-white p-8 rounded-2xl border border-slate-200 hover:border-emerald-500 transition-all group shadow-sm hover:shadow-xl"
+                className="bg-white p-10 rounded-[2.5rem] border border-slate-100 hover:border-emerald-500 transition-all group shadow-sm hover:shadow-2xl hover:-translate-y-2"
               >
-                <div className="w-12 h-12 bg-slate-50 rounded-xl flex items-center justify-center mb-6 group-hover:bg-emerald-50 transition-colors">
-                  {course.icon}
+                <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center mb-8 group-hover:bg-emerald-600 group-hover:text-white transition-all duration-500 shadow-inner">
+                  {React.cloneElement((ICON_MAP[course.icon] || ICON_MAP.Terminal) as React.ReactElement, { size: 28 })}
                 </div>
-                <h3 className="text-xl font-bold text-slate-900 mb-2">{course.title}</h3>
-                <p className="text-slate-600 text-sm mb-6 leading-relaxed">{course.description}</p>
-                <div className="flex items-center justify-between pt-6 border-t border-slate-100">
-                  <span className="text-xs font-bold uppercase tracking-wider text-slate-400">{course.difficulty}</span>
+                <h3 className="text-2xl font-black text-slate-900 mb-4 tracking-tight">{course.title}</h3>
+                <p className="text-slate-500 font-medium mb-8 leading-relaxed">{course.description}</p>
+                <div className="flex flex-wrap gap-2 mb-6">
+                  {course.tags?.map((tag: string) => (
+                    <span key={tag} className="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-600 border border-emerald-100">
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+                <div className="flex items-center justify-between pt-8 border-t border-slate-50">
+                  <div className="flex flex-col">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">{course.difficulty}</span>
+                    <span className="text-[10px] font-bold text-slate-400 flex items-center gap-1 mt-1"><Clock size={10} /> {course.duration}</span>
+                  </div>
                   <button 
+                    disabled={loading}
                     onClick={() => {
+                      if (loading) return;
                       if (!user) {
                         navigate("/register");
                         return;
                       }
-                      addToCart({ id: "quiz", name: "Quiz Support", price: 10 });
+                      addToCart({ id: "quiz", name: "Quiz Support", price: course.price });
                       navigate(`/checkout?course=${encodeURIComponent(course.title)}`);
                     }}
-                    className="bg-emerald-600 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-emerald-700 transition-all shadow-sm flex items-center gap-1"
+                    className="bg-slate-900 text-white px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-600 transition-all shadow-lg shadow-slate-100 flex items-center gap-2 disabled:opacity-50"
                   >
-                    Buy Support <ArrowRight size={12} />
+                    ₹{course.price} <ArrowRight size={14} />
                   </button>
                 </div>
               </motion.div>
@@ -123,9 +151,9 @@ export default function Home() {
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
-            <PricingCard title="Quiz Support" price="₹10" features={["Step-by-step logic", "Concept clarification", "Quick turnaround"]} user={user} type="quiz" />
-            <PricingCard title="Normal Lab Support" price="₹25" features={["Code walkthroughs", "Debugging assistance", "Environment setup"]} highlighted user={user} type="lab" />
-            <PricingCard title="Challenge Lab" price="₹50" features={["Advanced mentorship", "Complex problem solving", "Architectural guidance"]} user={user} type="challenge" />
+            <PricingCard title="Quiz Support" price="₹10" features={["Step-by-step logic", "Concept clarification", "Quick turnaround"]} user={user} loading={loading} type="quiz" />
+            <PricingCard title="Normal Lab Support" price="₹25" features={["Code walkthroughs", "Debugging assistance", "Environment setup"]} highlighted user={user} loading={loading} type="lab" />
+            <PricingCard title="Challenge Lab" price="₹50" features={["Advanced mentorship", "Complex problem solving", "Architectural guidance"]} user={user} loading={loading} type="challenge" />
           </div>
 
           {/* Bundle Offer */}
@@ -140,12 +168,14 @@ export default function Home() {
               </div>
               <div className="flex flex-col sm:flex-row gap-4">
                 <button 
+                  disabled={loading}
                   onClick={() => {
+                    if (loading) return;
                     if (!user) { navigate("/register"); return; }
                     addToCart({ id: "quiz_bundle", name: "5 Quiz Supports (Bundle)", price: 40, isBundle: true });
                     navigate("/checkout");
                   }}
-                  className="bg-white/10 backdrop-blur-md p-6 rounded-2xl border border-white/10 text-center min-w-[200px] hover:bg-white/20 transition-all group"
+                  className="bg-white/10 backdrop-blur-md p-6 rounded-2xl border border-white/10 text-center min-w-[200px] hover:bg-white/20 transition-all group disabled:opacity-50"
                 >
                   <div className="text-emerald-400 font-bold mb-1">5 Quiz Supports</div>
                   <div className="text-3xl font-bold">₹40</div>
@@ -153,12 +183,14 @@ export default function Home() {
                   <div className="mt-4 text-[10px] font-bold uppercase tracking-widest text-emerald-400 opacity-0 group-hover:opacity-100 transition-opacity">Buy Bundle</div>
                 </button>
                 <button 
+                  disabled={loading}
                   onClick={() => {
+                    if (loading) return;
                     if (!user) { navigate("/register"); return; }
                     addToCart({ id: "lab_bundle", name: "3 Lab Supports (Bundle)", price: 60, isBundle: true });
                     navigate("/checkout");
                   }}
-                  className="bg-white/10 backdrop-blur-md p-6 rounded-2xl border border-white/10 text-center min-w-[200px] hover:bg-white/20 transition-all group"
+                  className="bg-white/10 backdrop-blur-md p-6 rounded-2xl border border-white/10 text-center min-w-[200px] hover:bg-white/20 transition-all group disabled:opacity-50"
                 >
                   <div className="text-emerald-400 font-bold mb-1">3 Lab Supports</div>
                   <div className="text-3xl font-bold">₹60</div>
@@ -202,11 +234,12 @@ export default function Home() {
   );
 }
 
-function PricingCard({ title, price, features, highlighted = false, user, type }: any) {
+function PricingCard({ title, price, features, highlighted = false, user, loading, type }: any) {
   const { addToCart } = useCart();
   const navigate = useNavigate();
 
   const handleBuy = () => {
+    if (loading) return;
     if (!user) {
       navigate("/register");
       return;
@@ -240,10 +273,11 @@ function PricingCard({ title, price, features, highlighted = false, user, type }
         ))}
       </ul>
       <button 
+        disabled={loading}
         onClick={handleBuy}
-        className={`w-full block text-center py-3 rounded-xl font-bold transition-all ${highlighted ? 'bg-emerald-600 text-white hover:bg-emerald-700' : 'bg-slate-100 text-slate-900 hover:bg-slate-200'}`}
+        className={`w-full block text-center py-3 rounded-xl font-bold transition-all disabled:opacity-50 ${highlighted ? 'bg-emerald-600 text-white hover:bg-emerald-700' : 'bg-slate-100 text-slate-900 hover:bg-slate-200'}`}
       >
-        {user ? "Buy Now" : "Get Started"}
+        {loading ? "Checking..." : (user ? "Buy Now" : "Get Started")}
       </button>
     </div>
   );

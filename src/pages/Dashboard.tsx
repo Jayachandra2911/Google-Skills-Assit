@@ -68,77 +68,94 @@ export default function Dashboard() {
         {/* Left Column: Stats & Profile */}
         <div className="lg:w-1/3 space-y-8">
           {/* Profile Card */}
-          <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold text-slate-900">My Profile</h2>
+          <div className="bg-white p-8 rounded-[2.5rem] shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden relative group">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-110" />
+            
+            <div className="flex items-center justify-between mb-8 relative z-10">
+              <h2 className="text-2xl font-black text-slate-900 tracking-tight">Profile</h2>
               <button 
                 onClick={() => setIsEditing(!isEditing)}
-                className="text-sm font-bold text-emerald-600 hover:text-emerald-700"
+                className="px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-widest bg-slate-100 text-slate-600 hover:bg-emerald-600 hover:text-white transition-all"
               >
                 {isEditing ? "Cancel" : "Edit"}
               </button>
             </div>
 
             {isEditing ? (
-              <form onSubmit={handleUpdateProfile} className="space-y-4">
-                <div>
-                  <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Full Name</label>
-                  <input 
-                    type="text" 
-                    value={editForm.name}
-                    onChange={(e) => setEditForm({...editForm, name: e.target.value})}
-                    className="w-full px-4 py-2 rounded-lg border border-slate-200 focus:border-emerald-500 outline-none"
-                  />
+              <form onSubmit={handleUpdateProfile} className="space-y-6 relative z-10">
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">Full Name</label>
+                    <input 
+                      type="text" 
+                      value={editForm.name}
+                      onChange={(e) => setEditForm({...editForm, name: e.target.value})}
+                      className="w-full px-5 py-3 rounded-2xl border border-slate-200 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/5 outline-none transition-all font-medium"
+                      placeholder="Your Name"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">Phone Number</label>
+                    <input 
+                      type="tel" 
+                      value={editForm.phone}
+                      onChange={(e) => setEditForm({...editForm, phone: e.target.value.replace(/\D/g, '').slice(0, 10)})}
+                      className="w-full px-5 py-3 rounded-2xl border border-slate-200 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/5 outline-none transition-all font-medium"
+                      placeholder="10-digit mobile number"
+                    />
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Phone Number</label>
-                  <input 
-                    type="text" 
-                    value={editForm.phone}
-                    onChange={(e) => setEditForm({...editForm, phone: e.target.value})}
-                    className="w-full px-4 py-2 rounded-lg border border-slate-200 focus:border-emerald-500 outline-none"
-                  />
-                </div>
-                <button type="submit" className="w-full bg-emerald-600 text-white py-2 rounded-lg font-bold hover:bg-emerald-700">
-                  Save Changes
+                <button type="submit" className="w-full bg-slate-900 text-white py-4 rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-emerald-600 transition-all shadow-lg shadow-slate-200">
+                  Update Profile
                 </button>
               </form>
             ) : (
-              <div className="space-y-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-slate-50 rounded-full flex items-center justify-center text-slate-400">
-                    <User size={20} />
+              <div className="space-y-6 relative z-10">
+                <div className="flex items-center gap-4">
+                  <div className="w-16 h-16 bg-slate-100 rounded-3xl flex items-center justify-center text-slate-400 border border-slate-200 shadow-inner">
+                    <User size={32} />
                   </div>
                   <div>
-                    <div className="text-sm font-bold text-slate-900">{profile?.name}</div>
-                    <div className="text-xs text-slate-500 uppercase tracking-wider">Student</div>
+                    <div className="text-xl font-black text-slate-900 leading-tight">{profile?.name}</div>
+                    <div className={`text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-lg inline-block mt-2 ${profile?.role === 'admin' ? 'bg-purple-100 text-purple-700 border border-purple-200' : 'bg-blue-100 text-blue-700 border border-blue-200'}`}>
+                      {profile?.role === 'admin' ? 'Administrator' : 'Student'}
+                    </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-slate-50 rounded-full flex items-center justify-center text-slate-400">
-                    <Mail size={20} />
+                
+                <div className="space-y-3 pt-4 border-t border-slate-50">
+                  <div className="flex items-center gap-3 group/item">
+                    <div className="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center text-slate-400 group-hover/item:bg-emerald-50 group-hover/item:text-emerald-600 transition-colors">
+                      <Mail size={18} />
+                    </div>
+                    <div className="text-sm font-medium text-slate-600">{profile?.email}</div>
                   </div>
-                  <div className="text-sm text-slate-600">{profile?.email}</div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-slate-50 rounded-full flex items-center justify-center text-slate-400">
-                    <Phone size={20} />
+                  <div className="flex items-center gap-3 group/item">
+                    <div className="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center text-slate-400 group-hover/item:bg-emerald-50 group-hover/item:text-emerald-600 transition-colors">
+                      <Phone size={18} />
+                    </div>
+                    <div className="text-sm font-medium text-slate-600">{profile?.phone || <span className="text-red-400 italic">No phone added</span>}</div>
                   </div>
-                  <div className="text-sm text-slate-600">{profile?.phone || "No phone added"}</div>
                 </div>
+
+                {profile?.role === 'admin' && (
+                  <Link to="/admin" className="block w-full bg-purple-600 text-white py-4 rounded-2xl text-center font-black uppercase tracking-widest text-xs hover:bg-purple-700 transition-all shadow-lg shadow-purple-100 mt-4">
+                    Go to Admin Panel
+                  </Link>
+                )}
               </div>
             )}
           </div>
 
           {/* Stats Grid */}
           <div className="grid grid-cols-1 gap-4">
-            <StatCard icon={<ShoppingBag className="text-blue-500" />} label="Total Orders" value={stats.total} />
-            <StatCard icon={<Clock className="text-orange-500" />} label="Pending Support" value={stats.pending} />
-            <StatCard icon={<CheckCircle className="text-emerald-500" />} label="Completed" value={stats.completed} />
+            <StatCard icon={<ShoppingBag className="text-blue-600" size={20} />} label="Total Orders" value={stats.total} color="blue" />
+            <StatCard icon={<Clock className="text-orange-600" size={20} />} label="Pending Support" value={stats.pending} color="orange" />
+            <StatCard icon={<CheckCircle className="text-emerald-600" size={20} />} label="Completed" value={stats.completed} color="emerald" />
           </div>
 
-          <Link to="/#courses" className="block w-full bg-slate-900 text-white p-6 rounded-3xl text-center font-bold hover:bg-slate-800 transition-all flex items-center justify-center gap-2">
-            <ShoppingCart size={20} /> Buy New Assistance
+          <Link to="/#courses" className="group block w-full bg-slate-900 text-white p-6 rounded-[2rem] text-center font-black uppercase tracking-widest text-xs hover:bg-emerald-600 transition-all flex items-center justify-center gap-3 shadow-xl shadow-slate-200">
+            <ShoppingCart size={20} className="group-hover:scale-110 transition-transform" /> Buy New Assistance
           </Link>
         </div>
 
@@ -203,15 +220,21 @@ export default function Dashboard() {
   );
 }
 
-function StatCard({ icon, label, value }: any) {
+function StatCard({ icon, label, value, color }: any) {
+  const colors: any = {
+    blue: "bg-blue-50 border-blue-100",
+    orange: "bg-orange-50 border-orange-100",
+    emerald: "bg-emerald-50 border-emerald-100",
+  };
+
   return (
-    <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-4">
-      <div className="w-12 h-12 bg-slate-50 rounded-xl flex items-center justify-center">
+    <div className={`p-6 rounded-3xl border ${colors[color]} shadow-sm flex items-center gap-4 transition-all hover:shadow-md`}>
+      <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm">
         {icon}
       </div>
       <div>
-        <div className="text-2xl font-bold text-slate-900">{value}</div>
-        <div className="text-xs font-medium text-slate-400 uppercase tracking-wider">{label}</div>
+        <div className="text-2xl font-black text-slate-900 leading-none mb-1">{value}</div>
+        <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{label}</div>
       </div>
     </div>
   );
